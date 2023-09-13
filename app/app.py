@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from main import *
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:store.db///'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///store.db'
 db = SQLAlchemy(app)
 
 
@@ -13,37 +13,48 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     count = db.Column(db.Integer, nullable=False)
 
-db.create_all()
+
+with app.app_context():
+    db.create_all()
 
 
 @app.route("/", methods=['POST', 'GET'])
 def home():
     title = 'Strona główna'
 
-    Product.name = request.form.get("nazwa_kupno")
-    Product.price = request.form.get("cena_kupno")
-    Product.count = request.form.get("liczba_kupno")
-
-    Product.name = request.form.get("nazwa_sprzedaz")
-    Product.price = request.form.get("cena_sprzedaz")
-    Product.count = request.form.get("liczba_sprzedaz")
+    buy = Product(
+        name='name',
+        price=0,
+        count=0,
+        )
+    sale = Product(
+        name='name',
+        price=0,
+        count=0,
+        )
 
     operacja = request.form.get('operacja')
     kwota = request.form.get('kwota')
 
-    if nazwa_kupno and cena_kupno and liczba_kupno:
-        cena_kupno = int(cena_kupno)
-        liczba_kupno = int(liczba_kupno)
-        if cena_kupno > 0 and liczba_kupno > 0:
-            to_purchase(nazwa_kupno, cena_kupno, liczba_kupno)
-            manager.save_to_file()
+    if buy:
+        buy = Product(
+            name=request.form.get("nazwa_kupno"),
+            price=request.form.get("cena_kupno"),
+            count=request.form.get("liczba_kupno"),
+        )
+        db.session.add(buy)
+        db.session.commit()
+        manager.save_to_file()
 
-    if nazwa_sprzedaz and cena_sprzedaz and liczba_sprzedaz:
-        cena_sprzedaz = int(cena_sprzedaz)
-        liczba_sprzedaz = int(liczba_sprzedaz)
-        if cena_sprzedaz > 0 and liczba_sprzedaz > 0:
-            to_sale(nazwa_sprzedaz, cena_sprzedaz, liczba_sprzedaz)
-            manager.save_to_file()
+    if sale:
+        sale = Product(
+            name=request.form.get("nazwa_sprzedaz"),
+            price=request.form.get("cena_sprzedaz"),
+            count=request.form.get("liczba_sprzedaz"),
+        )
+        db.session.add(sale)
+        db.session.commit()
+        manager.save_to_file()
 
     if operacja and kwota:
         kwota = float(kwota)
