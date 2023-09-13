@@ -9,9 +9,12 @@ db = SQLAlchemy(app)
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
     count = db.Column(db.Integer, nullable=False)
+
+    def __str__(self):
+        return f'{self.name} // {self.price} // {self.count}'
 
 
 with app.app_context():
@@ -21,54 +24,45 @@ with app.app_context():
 @app.route("/", methods=['POST', 'GET'])
 def home():
     title = 'Strona główna'
+    products = db.session.query(Product).all()
 
-    buy = Product(
-        name='name',
-        price=0,
-        count=0,
-        )
-    sale = Product(
-        name='name',
-        price=0,
-        count=0,
-        )
+    buy_name = request.form.get("nazwa_kupno")
+    buy_price = request.form.get("cena_kupno")
+    buy_count = request.form.get("liczba_kupno")
+
+    sale_name = request.form.get("nazwa_sprzedaz")
+    sale_price = request.form.get("cena_sprzedaz")
+    sale_count = request.form.get("liczba_sprzedaz")
 
     operacja = request.form.get('operacja')
     kwota = request.form.get('kwota')
 
-    if buy:
-        buy = Product(
-            name=request.form.get("nazwa_kupno"),
-            price=request.form.get("cena_kupno"),
-            count=request.form.get("liczba_kupno"),
-        )
-        db.session.add(buy)
+    if buy_name and buy_price and buy_count:
+        buy_price = float(buy_price)
+        buy_count = int(buy_count)
+        p = Product(name=buy_name, price=buy_price, count=buy_count)
+        db.session.add(p)
         db.session.commit()
-        manager.save_to_file()
 
-    if sale:
-        sale = Product(
-            name=request.form.get("nazwa_sprzedaz"),
-            price=request.form.get("cena_sprzedaz"),
-            count=request.form.get("liczba_sprzedaz"),
-        )
+    if sale_name and sale_price and sale_count:
+        sale_price = float(sale_price)
+        sale_count = int(sale_count)
+        sale = Product(name=sale_name, price=sale_price, count=sale_count)
         db.session.add(sale)
         db.session.commit()
-        manager.save_to_file()
 
     if operacja and kwota:
         kwota = float(kwota)
         if kwota > 0:
             balance_request(int(operacja), kwota)
-            manager.save_to_file()
 
     context = {
         'title': title,
         'show_balance': show_account_balance(),
-        'list': show_list_of_products(),
         'purchase': to_purchase,
         'sale': to_sale,
         'balance_request': balance_request,
+        'products': products,
         }
     return render_template('index.html', context=context)
 

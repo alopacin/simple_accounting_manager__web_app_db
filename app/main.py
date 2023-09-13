@@ -1,6 +1,3 @@
-import json
-import os
-
 # zainicjowanie klasy manager
 class Manager:
     def __init__(self):
@@ -10,34 +7,10 @@ class Manager:
         self.historia_akcji = []
         self.akcja = 0
         self.stan_konta = 1000
-        self.filename = 'history.json'
-
-# metoda wczytujaca wartosci do obiektu
-    def load_data(self):
-        if os.path.exists(self.filename):
-            try:
-                with open(self.filename, 'r') as f:
-                    data = json.load(f)
-                    self.stan_konta = data.get('stan_konta')
-                    self.stan_magazynu = data.get('stan_magazynu')
-                    self.historia_akcji = data.get('historia_akcji')
-            except json.JSONDecodeError:
-                self.save_to_file()
-
-    # metoda zapisujaca wartosci obiektu do pliku tekstowego
-    def save_to_file(self):
-        data = {
-            'stan_konta': self.stan_konta,
-            'stan_magazynu': self.stan_magazynu,
-            'historia_akcji': self.historia_akcji
-        }
-        with open(self.filename, 'w') as f:
-            json.dump(data, f)
 
 
-# utworzenie instacji klasy Manager, wczytanie historii i wartosci z pliku
+# utworzenie instacji klasy Manager
 manager = Manager()
-manager.load_data()
 
 
 # funkcja dodajaca i odejmujaca kwote z konta
@@ -84,15 +57,6 @@ def to_purchase(nazwa_kupno='nazwa_kupno', cena_kupno=0, ilosc_kupno=0):
 # funkcja ktora sprawdza stan konta
 def show_account_balance():
     return f'{manager.stan_konta} $'
-
-
-# funkcja wyswietlajaca liste produktow na magazynie
-def show_list_of_products():
-    products = {k: v for k, v in manager.stan_magazynu.items() if v['ilosc'] > 0}
-    products_list = []
-    for k, v in products.items():
-        products_list.append(f"{k.upper()} (ilość : {v['ilosc']}, cena : {v['cena']} )")
-    return ' ; '.join(products_list)
 
 
 # funkcja, ktora odpowiada za przeglad historii zmian
