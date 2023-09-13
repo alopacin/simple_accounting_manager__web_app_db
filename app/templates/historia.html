@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Historia</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+</head>
+
+<body>
+
+    <div class="container mt-4 mb-4 text-center">
+    <h1>Historia</h1>
+        <a href="/" class="btn btn-secondary" >Strona główna</a>
+        <a href="/historia" class="btn btn-secondary">Historia</a>
+    </div>
+
+    <div class="container w-50 p-3 --bs-dark-text-emphasis bg-dark-subtle border border-primary-subtle rounded-3">
+        <h2 class="container row">Historia akcji : </h2>
+        {% if message %}
+            <p style="color: red"> {{ message }} </p>
+        {% endif %}
+        <p class="container row"> {{ context.history| safe }} </p>
+    </div>
+
+</body>
+</html>
