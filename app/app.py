@@ -24,7 +24,6 @@ with app.app_context():
 @app.route("/", methods=['POST', 'GET'])
 def home():
     title = 'Strona główna'
-    products = db.session.query(Product).all()
 
     buy_name = request.form.get("nazwa_kupno")
     buy_price = request.form.get("cena_kupno")
@@ -45,13 +44,10 @@ def home():
             return None
         elif laczna_cena < manager.stan_konta:
             manager.stan_konta -= laczna_cena
-            buy = Product()
-            buy.name = buy_name
-            buy.price = buy_price
-            buy.count = buy_count
+            buy = Product(name=buy_name, price=buy_price, count=buy_price)
             db.session.add(buy)
             db.session.commit()
-            return redirect(url_for('/'))
+            return redirect(url_for("store"))
 
     if sale_name and sale_price and sale_count:
         sale_price = float(sale_price)
@@ -62,10 +58,10 @@ def home():
         laczna_cena = sale_price * sale_count
         manager.stan_konta += laczna_cena
         Product.count -= sale_count
-        sale = Product(sale_name, sale_price, sale_count)
+        sale = Product(name=sale_name, price=sale_price, count=sale_count)
         db.session.add(sale)
         db.session.commit()
-        return redirect(url_for('/'))
+        return redirect(url_for("store"))
 
     if operacja and kwota:
         kwota = float(kwota)
@@ -76,9 +72,29 @@ def home():
         'title': title,
         'show_balance': show_account_balance(),
         'balance_request': balance_request,
-        'products': products,
         }
     return render_template('index.html', context=context)
+
+
+@app.route("/magazyn", methods=['POST', 'GET'])
+def store():
+    title = 'Magazyn'
+    products = db.session.query(Product).all()
+    context = {
+        'title': title,
+        'products': products,
+    }
+    return render_template('store.html', context=context)
+
+
+@app.route("/delete-product", methods=['POST', 'GET'])
+def delete_product():
+    product_id = request.form.get('product_id')
+    if product_id:
+        product = db.get_or_404(Product, int(product_id))
+        db.session.delete(product)
+        db.session.commit()
+        return redirect(url_for('store'))
 
 
 @app.route("/historia")
