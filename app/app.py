@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from main import *
 
@@ -40,16 +40,32 @@ def home():
     if buy_name and buy_price and buy_count:
         buy_price = float(buy_price)
         buy_count = int(buy_count)
-        p = Product(name=buy_name, price=buy_price, count=buy_count)
-        db.session.add(p)
-        db.session.commit()
+        laczna_cena = buy_price * buy_count
+        if laczna_cena > manager.stan_konta:
+            return None
+        elif laczna_cena < manager.stan_konta:
+            manager.stan_konta -= laczna_cena
+            buy = Product()
+            buy.name = buy_name
+            buy.price = buy_price
+            buy.count = buy_count
+            db.session.add(buy)
+            db.session.commit()
+            return redirect(url_for('/'))
 
     if sale_name and sale_price and sale_count:
         sale_price = float(sale_price)
         sale_count = int(sale_count)
-        sale = Product(name=sale_name, price=sale_price, count=sale_count)
+        product = db.session.query(Product).filter_by(name=sale_name).first()
+        if not product:
+            return None
+        laczna_cena = sale_price * sale_count
+        manager.stan_konta += laczna_cena
+        Product.count -= sale_count
+        sale = Product(sale_name, sale_price, sale_count)
         db.session.add(sale)
         db.session.commit()
+        return redirect(url_for('/'))
 
     if operacja and kwota:
         kwota = float(kwota)
@@ -59,8 +75,6 @@ def home():
     context = {
         'title': title,
         'show_balance': show_account_balance(),
-        'purchase': to_purchase,
-        'sale': to_sale,
         'balance_request': balance_request,
         'products': products,
         }
