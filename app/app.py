@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_alembic import Alembic
 from flask_sqlalchemy import SQLAlchemy
-from main import *
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///store.db'
@@ -17,8 +17,48 @@ class Product(db.Model):
         return f'{self.name} // {self.price} // {self.count}'
 
 
+class History(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    action = db.Column(db.String, nullable=False)
+
+
+class Account(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    account = db.Column(db.Float)
+
+    def __str__(self):
+        return self.account
+
+
 with app.app_context():
     db.create_all()
+    if not Account.query.first():
+        default_account = Account(id=0,account=0)
+        db.session.add(default_account)
+        db.session.commit()
+
+
+def balance_request(number=1, saldo=0):
+    account = Account.query.first()
+    if number == 1:
+        account.account += saldo
+        akcja = f'Dodano {saldo} $ do konta'
+    elif number == 2:
+        account.account -= saldo
+        akcja = f'Odjęto {saldo} $ z konta'
+    add_history = History(action=akcja)
+    db.session.add_all([add_history, account])
+    db.session.commit()
+
+
+def show_account_balance():
+    account = Account.query.first()
+    return f'{account.account} $'
+
+
+def show_history():
+    history = History.query.all()
+    return history
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -40,26 +80,36 @@ def home():
         buy_price = float(buy_price)
         buy_count = int(buy_count)
         laczna_cena = buy_price * buy_count
-        if laczna_cena > manager.stan_konta:
-            return None
-        elif laczna_cena < manager.stan_konta:
-            manager.stan_konta -= laczna_cena
-            buy = Product(name=buy_name, price=buy_price, count=buy_price)
-            db.session.add(buy)
+        account = Account.query.first()
+        if laczna_cena > account.account:
+            flash("Za mało śrddków na koncie")
+            return redirect(url_for("store"))
+        else:
+            account.account -= laczna_cena
+            buy = Product(name=buy_name, price=buy_price, count=buy_count)
+            action = f'Kupiono {buy}'
+            history = History(action=action)
+            db.session.add_all([buy, history])
             db.session.commit()
             return redirect(url_for("store"))
 
     if sale_name and sale_price and sale_count:
         sale_price = float(sale_price)
         sale_count = int(sale_count)
-        product = db.session.query(Product).filter_by(name=sale_name).first()
+        product = db.session.query(Product).filter_by(name=sale_name)
         if not product:
-            return None
+            flash("Nie ma takiego produktu")
+            return redirect(url_for("store"))
+        if product.count < sale_count:
+            flash("Nie ma wystarczającej ilości produktu w magazynie")
+            return redirect(url_for("store"))
         laczna_cena = sale_price * sale_count
-        manager.stan_konta += laczna_cena
-        Product.count -= sale_count
-        sale = Product(name=sale_name, price=sale_price, count=sale_count)
-        db.session.add(sale)
+        account = Account.query.first()
+        account.account += laczna_cena
+        product.count -= sale_count
+        action = f"Sprzedano {sale_name} w ilości {sale_count} za łączną cenę {laczna_cena}"
+        history = History(action=action)
+        db.session.add_all([product, history, account])
         db.session.commit()
         return redirect(url_for("store"))
 
@@ -102,7 +152,7 @@ def history():
     title = 'Historia'
     context = {
         'title': title,
-        'history': show_action_history(),
+        'show_history': show_history,
     }
     return render_template('historia.html', context=context)
 
@@ -110,8 +160,8 @@ def history():
 @app.route("/historia/<int:start>/<int:koniec>")
 def history_range(start, koniec):
     title = 'Wybrany zakres historii'
-    max_range = len(manager.historia_akcji)
-    selected_history = manager.historia_akcji[start-1:koniec]
+    max_range = len(History.id)
+    selected_history = History.id[start-1:koniec]
     context = {
         'title': title,
         'history': '<br> * '.join([''] + selected_history),
@@ -121,6 +171,11 @@ def history_range(start, koniec):
         message = f"Proszę wybrać zakres od 1 do {max_range}."
         return render_template('historia.html', context=context, message=message)
     return render_template('historia.html', context=context)
+
+
+alembic = Alembic()
+alembic.init_app(app)
+
 
 
 
