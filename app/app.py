@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, redirect, url_for
-from flask_alembic import Alembic
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -13,21 +12,18 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     count = db.Column(db.Integer, nullable=False)
 
-    def __str__(self):
-        return f'{self.name} // {self.price} // {self.count}'
-
 
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     action = db.Column(db.String, nullable=False)
 
+    def __str__(self):
+        return f'{self.id} // {self.action}'
+
 
 class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account = db.Column(db.Float)
-
-    def __str__(self):
-        return self.account
 
 
 with app.app_context():
@@ -58,7 +54,7 @@ def show_account_balance():
 
 def show_history():
     history = History.query.all()
-    return history
+    print(history)
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -79,13 +75,16 @@ def home():
         'balance_request': balance_request,
     }
 
+    operacja = request.form.get('operacja')
+    kwota = request.form.get('kwota')
+
     if buy_name and buy_price and buy_count:
         buy_price = float(buy_price)
         buy_count = int(buy_count)
         laczna_cena = buy_price * buy_count
         account = Account.query.first()
         if laczna_cena > account.account:
-            return render_template('index.html', context=context, message='Za mało środków na koncie')
+            return render_template('index.html', context=context, message1='Za mało środków na koncie')
         else:
             account.account -= laczna_cena
             buy = Product(name=buy_name, price=buy_price, count=buy_count)
@@ -100,9 +99,9 @@ def home():
         sale_count = int(sale_count)
         product = db.session.query(Product).filter_by(name=sale_name).first()
         if not product:
-            return render_template('index.html', context=context, message='Brak takiego produktu')
+            return render_template('index.html', context=context, message2='Brak takiego produktu')
         if product.count < sale_count:
-            return render_template('index.html', context=context, message='Za mało produktów')
+            return render_template('index.html', context=context, message3='Za mało produktów')
         laczna_cena = sale_price * sale_count
         account = Account.query.first()
         account.account += laczna_cena
@@ -111,7 +110,16 @@ def home():
         history = History(action=action)
         db.session.add_all([product, history, account])
         db.session.commit()
+        if product.count <= 0:
+            db.session.delete(product)
+            db.session.commit()
         return redirect(url_for("store"))
+
+    if operacja and kwota:
+        kwota = float(kwota)
+        if kwota > 0:
+            balance_request(int(operacja), kwota)
+            return redirect(url_for("home"))
 
     return render_template('index.html', context=context)
 
@@ -142,7 +150,7 @@ def history():
     title = 'Historia'
     context = {
         'title': title,
-        'show_history': show_history,
+        'show_history': show_history(),
     }
     return render_template('historia.html', context=context)
 
@@ -162,9 +170,6 @@ def history_range(start, koniec):
         return render_template('historia.html', context=context, message=message)
     return render_template('historia.html', context=context)
 
-
-alembic = Alembic()
-alembic.init_app(app)
 
 
 

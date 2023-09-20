@@ -18,9 +18,7 @@
 
     <div class="container w-50 p-3 --bs-dark-text-emphasis bg-dark-subtle border border-primary-subtle rounded-3">
         <h2 class="container row">Historia akcji : </h2>
-        {% for history in show_history %}
-        <p class="container row"> {{ history }} </p>
-        {% endfor %}
+            <p class="container row"> {{ context.show_history }} </p>
     </div>
 
 </body>

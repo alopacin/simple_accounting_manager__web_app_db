@@ -26,8 +26,8 @@
                 <input class="w-100" type="number" placeholder="Podaj cenę kupna" name="cena_kupno" >
                 <input class="w-100" type="number" placeholder="Podaj liczbę kupionych sztuk" name="liczba_kupno">
                 <button class="btn btn-secondary" type="submit">Wyślij</button>
-                {% if message %}
-                <p style="color: red"> {{ message }} </p>
+                {% if message1 %}
+                <p style="color: red"> {{ message1 }} </p>
                 {% endif %}
             </form>
         </div>
@@ -39,8 +39,11 @@
                 <input class="w-100" type="number" placeholder="Podaj cenę sprzedaży" name="cena_sprzedaz">
                 <input class="w-100" type="number" placeholder="Podaj liczbę sprzedanych sztuk" name="liczba_sprzedaz">
                 <button class="btn btn-secondary" type="submit">Wyślij</button>
-                {% if message %}
-                <p style="color: red"> {{ message }} </p>
+                {% if message2 %}
+                <p style="color: red"> {{ message2 }} </p>
+                {% endif %}
+                {% if message3 %}
+                <p style="color: red"> {{ message3 }} </p>
                 {% endif %}
             </form>
         </div>
