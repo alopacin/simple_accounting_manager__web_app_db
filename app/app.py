@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
 from flask_alembic import Alembic
 from flask_sqlalchemy import SQLAlchemy
 
@@ -73,8 +73,11 @@ def home():
     sale_price = request.form.get("cena_sprzedaz")
     sale_count = request.form.get("liczba_sprzedaz")
 
-    operacja = request.form.get('operacja')
-    kwota = request.form.get('kwota')
+    context = {
+        'title': title,
+        'show_balance': show_account_balance(),
+        'balance_request': balance_request,
+    }
 
     if buy_name and buy_price and buy_count:
         buy_price = float(buy_price)
@@ -82,8 +85,7 @@ def home():
         laczna_cena = buy_price * buy_count
         account = Account.query.first()
         if laczna_cena > account.account:
-            flash("Za mało śrddków na koncie")
-            return redirect(url_for("store"))
+            return render_template('index.html', context=context, message='Za mało środków na koncie')
         else:
             account.account -= laczna_cena
             buy = Product(name=buy_name, price=buy_price, count=buy_count)
@@ -96,13 +98,11 @@ def home():
     if sale_name and sale_price and sale_count:
         sale_price = float(sale_price)
         sale_count = int(sale_count)
-        product = db.session.query(Product).filter_by(name=sale_name)
+        product = db.session.query(Product).filter_by(name=sale_name).first()
         if not product:
-            flash("Nie ma takiego produktu")
-            return redirect(url_for("store"))
+            return render_template('index.html', context=context, message='Brak takiego produktu')
         if product.count < sale_count:
-            flash("Nie ma wystarczającej ilości produktu w magazynie")
-            return redirect(url_for("store"))
+            return render_template('index.html', context=context, message='Za mało produktów')
         laczna_cena = sale_price * sale_count
         account = Account.query.first()
         account.account += laczna_cena
@@ -113,16 +113,6 @@ def home():
         db.session.commit()
         return redirect(url_for("store"))
 
-    if operacja and kwota:
-        kwota = float(kwota)
-        if kwota > 0:
-            balance_request(int(operacja), kwota)
-
-    context = {
-        'title': title,
-        'show_balance': show_account_balance(),
-        'balance_request': balance_request,
-        }
     return render_template('index.html', context=context)
 
 
