@@ -16,10 +16,26 @@
         <a href="/historia" class="btn btn-secondary">Historia</a>
     </div>
 
+    <div class="container text-center mt-2 row-cols-2">
+        <div class="container col-sm-6 mt-4 mb-3 p-3 --bs-dark-text-emphasis bg-dark-subtle border border-primary-subtle rounded-3">
+            <h4 class="container row">Sprawdź historię </h4>
+            <form action="/historia/range" method="POST">
+                <input class="w-100" type="number" placeholder="Poczatek zakresu" name="start" required>
+                <input class="w-100" type="number" placeholder="Koniec zakresu" name="end" required>
+                <button class="btn btn-secondary" type="submit">Wyślij</button>
+            </form>
+            {% if message %}
+                <p style="color: red">{{ message }}</p>
+            {% endif %}
+            {% for h in context.history %}
+            <p> * {{ h }};</p>
+            {% endfor %}
+        </div>
     <div class="container w-50 p-3 --bs-dark-text-emphasis bg-dark-subtle border border-primary-subtle rounded-3">
         <h2 class="container row">Historia akcji : </h2>
-            <p class="container row"> {{ context.show_history }} </p>
+            {% for history in context.show_history %}
+    <p class="container row"> {{ history }}; </p>
+    {% endfor %}
     </div>
-
 </body>
 </html>

@@ -12,13 +12,19 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     count = db.Column(db.Integer, nullable=False)
 
+    def __str__(self):
+        return self.name
+
 
 class History(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     action = db.Column(db.String, nullable=False)
 
+    def __init__(self, action):
+        self.action = action
+
     def __str__(self):
-        return f'{self.id} // {self.action}'
+        return self.action
 
 
 class Account(db.Model):
@@ -54,7 +60,7 @@ def show_account_balance():
 
 def show_history():
     history = History.query.all()
-    print(history)
+    return history
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -88,7 +94,7 @@ def home():
         else:
             account.account -= laczna_cena
             buy = Product(name=buy_name, price=buy_price, count=buy_count)
-            action = f'Kupiono {buy}'
+            action = f'Kupiono {buy} w ilości {buy_count} za łączną cenę {laczna_cena}'
             history = History(action=action)
             db.session.add_all([buy, history])
             db.session.commit()
@@ -148,6 +154,7 @@ def delete_product():
 @app.route("/historia")
 def history():
     title = 'Historia'
+
     context = {
         'title': title,
         'show_history': show_history(),
@@ -155,22 +162,39 @@ def history():
     return render_template('historia.html', context=context)
 
 
+@app.route("/historia/range", methods=['POST', 'GET'])
+def history_range_post():
+    start = int(request.form.get('start'))
+    koniec = int(request.form.get('end'))
+    context = {
+        'message': 'Proszę wprowadzić dodatnią liczbę'
+    }
+
+    if start < 0 or koniec < 0:
+        return render_template('historia.html', context=context)
+
+    return redirect(url_for('history_range', start=start, koniec=koniec))
+
+
 @app.route("/historia/<int:start>/<int:koniec>")
 def history_range(start, koniec):
     title = 'Wybrany zakres historii'
-    max_range = len(History.id)
-    selected_history = History.id[start-1:koniec]
+    max_range = db.session.query(History).count()
+    history = db.session.query(History).order_by(History.id).slice(start - 1, koniec).all()
+
+    history_texts = [str(h) for h in history]
+
     context = {
         'title': title,
-        'history': '<br> * '.join([''] + selected_history),
+        'history': history_texts,
+        'show_history': show_history()
     }
+
     if start < 1 or koniec > max_range or start > koniec:
         context['history'] = ''
         message = f"Proszę wybrać zakres od 1 do {max_range}."
         return render_template('historia.html', context=context, message=message)
+
     return render_template('historia.html', context=context)
-
-
-
 
 
