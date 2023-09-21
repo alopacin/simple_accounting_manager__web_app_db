@@ -1,35 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///store.db'
-db = SQLAlchemy(app)
-
-
-class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    count = db.Column(db.Integer, nullable=False)
-
-    def __str__(self):
-        return self.name
-
-
-class History(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    action = db.Column(db.String, nullable=False)
-
-    def __init__(self, action):
-        self.action = action
-
-    def __str__(self):
-        return self.action
-
-
-class Account(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    account = db.Column(db.Float)
+from flask import render_template, request, redirect, url_for
+from models import *
+from functions import balance_request, show_account_balance, show_history, to_buy, to_sale
 
 
 with app.app_context():
@@ -38,29 +9,6 @@ with app.app_context():
         default_account = Account(id=0,account=0)
         db.session.add(default_account)
         db.session.commit()
-
-
-def balance_request(number=1, saldo=0):
-    account = Account.query.first()
-    if number == 1:
-        account.account += saldo
-        akcja = f'Dodano {saldo} $ do konta'
-    elif number == 2:
-        account.account -= saldo
-        akcja = f'Odjęto {saldo} $ z konta'
-    add_history = History(action=akcja)
-    db.session.add_all([add_history, account])
-    db.session.commit()
-
-
-def show_account_balance():
-    account = Account.query.first()
-    return f'{account.account} $'
-
-
-def show_history():
-    history = History.query.all()
-    return history
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -85,41 +33,10 @@ def home():
     kwota = request.form.get('kwota')
 
     if buy_name and buy_price and buy_count:
-        buy_price = float(buy_price)
-        buy_count = int(buy_count)
-        laczna_cena = buy_price * buy_count
-        account = Account.query.first()
-        if laczna_cena > account.account:
-            return render_template('index.html', context=context, message1='Za mało środków na koncie')
-        else:
-            account.account -= laczna_cena
-            buy = Product(name=buy_name, price=buy_price, count=buy_count)
-            action = f'Kupiono {buy} w ilości {buy_count} za łączną cenę {laczna_cena}'
-            history = History(action=action)
-            db.session.add_all([buy, history])
-            db.session.commit()
-            return redirect(url_for("store"))
+        return to_buy(buy_name, buy_price, buy_count, context)
 
     if sale_name and sale_price and sale_count:
-        sale_price = float(sale_price)
-        sale_count = int(sale_count)
-        product = db.session.query(Product).filter_by(name=sale_name).first()
-        if not product:
-            return render_template('index.html', context=context, message2='Brak takiego produktu')
-        if product.count < sale_count:
-            return render_template('index.html', context=context, message3='Za mało produktów')
-        laczna_cena = sale_price * sale_count
-        account = Account.query.first()
-        account.account += laczna_cena
-        product.count -= sale_count
-        action = f"Sprzedano {sale_name} w ilości {sale_count} za łączną cenę {laczna_cena}"
-        history = History(action=action)
-        db.session.add_all([product, history, account])
-        db.session.commit()
-        if product.count <= 0:
-            db.session.delete(product)
-            db.session.commit()
-        return redirect(url_for("store"))
+        return to_sale(sale_name, sale_price, sale_count, context)
 
     if operacja and kwota:
         kwota = float(kwota)
@@ -154,7 +71,6 @@ def delete_product():
 @app.route("/historia")
 def history():
     title = 'Historia'
-
     context = {
         'title': title,
         'show_history': show_history(),
@@ -172,7 +88,6 @@ def history_range_post():
 
     if start < 0 or koniec < 0:
         return render_template('historia.html', context=context)
-
     return redirect(url_for('history_range', start=start, koniec=koniec))
 
 
@@ -181,9 +96,7 @@ def history_range(start, koniec):
     title = 'Wybrany zakres historii'
     max_range = db.session.query(History).count()
     history = db.session.query(History).order_by(History.id).slice(start - 1, koniec).all()
-
     history_texts = [str(h) for h in history]
-
     context = {
         'title': title,
         'history': history_texts,
@@ -194,7 +107,6 @@ def history_range(start, koniec):
         context['history'] = ''
         message = f"Proszę wybrać zakres od 1 do {max_range}."
         return render_template('historia.html', context=context, message=message)
-
     return render_template('historia.html', context=context)
 
 

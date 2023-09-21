@@ -22,9 +22,9 @@
         <div class="container col-sm-6 mt-4 mb-3 p-3 --bs-dark-text-emphasis bg-dark-subtle border border-primary-subtle rounded-3">
             <h4 class="container row">Zakup : </h4>
             <form action="/" method="POST">
-                <input class="w-100" type="text" placeholder="Wpisz produkt" name="nazwa_kupno">
-                <input class="w-100" type="number" placeholder="Podaj cenę kupna" name="cena_kupno" >
-                <input class="w-100" type="number" placeholder="Podaj liczbę kupionych sztuk" name="liczba_kupno">
+                <input class="w-100" type="text" placeholder="Wpisz produkt" name="nazwa_kupno" required>
+                <input class="w-100" type="number" placeholder="Podaj cenę kupna" name="cena_kupno" required>
+                <input class="w-100" type="number" placeholder="Podaj liczbę kupionych sztuk" name="liczba_kupno" required>
                 <button class="btn btn-secondary" type="submit">Wyślij</button>
                 {% if message1 %}
                 <p style="color: red"> {{ message1 }} </p>
@@ -35,9 +35,9 @@
         <div class="container col-sm-6 mt-2 mb-3 p-3 --bs-dark-text-emphasis bg-dark-subtle border border-primary-subtle rounded-3">
             <h4 class="container row">Sprzedaż :</h4>
             <form action="/" method="POST">
-                <input class="w-100" type="text" placeholder="Wpisz produkt" name="nazwa_sprzedaz">
-                <input class="w-100" type="number" placeholder="Podaj cenę sprzedaży" name="cena_sprzedaz">
-                <input class="w-100" type="number" placeholder="Podaj liczbę sprzedanych sztuk" name="liczba_sprzedaz">
+                <input class="w-100" type="text" placeholder="Wpisz produkt" name="nazwa_sprzedaz" required>
+                <input class="w-100" type="number" placeholder="Podaj cenę sprzedaży" name="cena_sprzedaz" required>
+                <input class="w-100" type="number" placeholder="Podaj liczbę sprzedanych sztuk" name="liczba_sprzedaz" required>
                 <button class="btn btn-secondary" type="submit">Wyślij</button>
                 {% if message2 %}
                 <p style="color: red"> {{ message2 }} </p>
